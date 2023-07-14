@@ -1,29 +1,46 @@
-import {wait} from '../src/wait'
-import * as process from 'process'
-import * as cp from 'child_process'
-import * as path from 'path'
-import {expect, test} from '@jest/globals'
+import {Octokit} from '@octokit/core'
+import {describe, expect} from '@jest/globals'
+import {makeSBOM} from '../src/make-sbom'
+import fs from 'fs'
 
-test('throws invalid number', async () => {
-  const input = parseInt('foo', 10)
-  await expect(wait(input)).rejects.toThrow('milliseconds not a number')
+const mockSBOM = fs.readFileSync('./__tests__/mock-sbom.json', 'utf-8')
+
+jest.spyOn(fs, 'writeFile').mockImplementation((f, d, callback) => {
+  console.log('[mock] writing file')
+  callback(null)
 })
 
-test('wait 500 ms', async () => {
-  const start = new Date()
-  await wait(500)
-  const end = new Date()
-  var delta = Math.abs(end.getTime() - start.getTime())
-  expect(delta).toBeGreaterThan(450)
-})
+describe('makeSBOM', () => {
+  it('should retrieve the SBOM for a repository', async () => {
+    const token = 'test-token'
+    const owner = 'octocat'
+    const repo = 'hello-world'
+    const sha = 'fe43fdf'
 
-// shows how the runner will run a javascript action with env / stdout protocol
-test('test runs', () => {
-  process.env['INPUT_MILLISECONDS'] = '500'
-  const np = process.execPath
-  const ip = path.join(__dirname, '..', 'lib', 'main.js')
-  const options: cp.ExecFileSyncOptions = {
-    env: process.env
-  }
-  console.log(cp.execFileSync(np, [ip], options).toString())
+    const octokit = new Octokit()
+    ;(<any>octokit).request = jest.fn().mockResolvedValue({
+      data: {
+        sbom: mockSBOM
+      }
+    })
+
+    await makeSBOM(token, owner, repo, sha, <any>octokit)
+
+    expect(octokit.request).toHaveBeenCalledWith(
+      'GET /repos/{owner}/{repo}/dependency-graph/sbom',
+      {
+        owner,
+        repo,
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      }
+    )
+
+    expect(fs.writeFile).toHaveBeenCalledWith(
+      `sbom-${owner}-${repo}-${sha}.json`,
+      JSON.stringify(mockSBOM),
+      expect.any(Function)
+    )
+  })
 })
