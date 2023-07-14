@@ -1,18 +1,19 @@
 import * as core from '@actions/core'
-import {wait} from './wait'
+import {makeSBOM} from './make-sbom'
+import {getRequiredEnvParam, wrapError} from './utils'
 
 async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
-    core.debug(`Waiting ${ms} milliseconds ...`) // debug is only output if you set the secret `ACTIONS_STEP_DEBUG` to true
+    const token: string = core.getInput('token')
+    const repo_owner: string = getRequiredEnvParam('GITHUB_REPOSITORY')
+    const [owner, repo] = repo_owner.split('/')
+    const sha = getRequiredEnvParam('GITHUB_SHA')
 
     core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
+    await makeSBOM(token, owner, repo, sha)
     core.debug(new Date().toTimeString())
-
-    core.setOutput('time', new Date().toTimeString())
   } catch (error) {
-    if (error instanceof Error) core.setFailed(error.message)
+    core.setFailed(wrapError(error).message)
   }
 }
 
