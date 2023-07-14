@@ -20,5 +20,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./
+        id: makesbom
+        name: Make the SBOM
+      - run: ls -la
+      - run: echo ${{ steps.makesbom.outputs.fileName }}
+      - uses: actions/upload-artifact@v3
         with:
-          milliseconds: 1000
+          name: sbom
+          path: ${{ steps.makebom.outputs.fileName }}
