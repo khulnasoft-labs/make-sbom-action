@@ -3,6 +3,7 @@ description: 'Generates an SBOM from your repository dependency graph'
 outputs:
   fileName: # output will be available to future steps
     description: 'The generated sbom file path'
+    icon: shield
 runs:
   using: 'node16'
   main: 'dist/index.js'
