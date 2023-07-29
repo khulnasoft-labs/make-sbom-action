@@ -1,17 +1,8 @@
-name: 'Make SBOM'
-description: 'Make an SBOM via the REST API'
-author: 'Colin Dembovsky'
-branding:
-  color: green
-  icon: shield
-inputs:
-  token:
-    required: false
-    description: 'GitHub token with permissions to read SBOM'
-    default: ${{ github.token }}
+name: 'make-sbom-action'
+description: 'Generates an SBOM from your repository dependency graph'
 outputs:
-  fileName:
-    description: The filename of the SBOM makes
+  fileName: # output will be available to future steps
+    description: 'The generated sbom file path'
 runs:
   using: 'node16'
   main: 'dist/index.js'

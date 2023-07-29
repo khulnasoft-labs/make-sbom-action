@@ -1,30 +1,31 @@
-name: 'build-test'
-on: # rebuild any PRs and main branch changes
+name: "Tests"
+on:
   pull_request:
   push:
     branches:
       - main
       - 'releases/*'
+  workflow_dispatch:
+
+permissions: read-all
 
 jobs:
-  build: # make sure build/ci work properly
+  # unit tests
+  units:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - run: |
-          npm install
-      - run: |
-          npm run all
-  test: # make sure the action works on a clean machine without building
+    - uses: actions/checkout@v3
+    - run: npm ci
+    - run: npm test
+      env: 
+        GITHUB_TOKEN: ${{ github.token }}
+
+
+  # test action works running from the graph
+  test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: ./
-        id: makesbom
-        name: Make the SBOM
-      - run: ls -la
-      - run: echo ${{ steps.makesbom.outputs.fileName }}
-      - uses: actions/upload-artifact@v3
-        with:
-          name: sbom
-          path: ${{ steps.makebom.outputs.fileName }}
+    - uses: actions/checkout@v3
+    - uses: ./
+      env: 
+        GITHUB_TOKEN: ${{ github.token }}
